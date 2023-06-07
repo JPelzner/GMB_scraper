@@ -14,7 +14,7 @@ from selenium.webdriver.common.keys import Keys
 # from selenium.webdriver.support import expected_conditions as EC
 
 class GMB_scraper():
-    def __init__(self):
+    def __init__(self, chrome_options):
         self.client_code = input("Please enter the client code\n\n*")
         self.cutoff_code = input(
             """Please enter a number to specify the time intervals
@@ -31,6 +31,7 @@ class GMB_scraper():
             7 - one interval (n months)
             * """
         )
+        self.chrome_options = chrome_options
 
     # load files containing the list of competitors for a certain client and city
     def load_files(self, client_code):
@@ -462,7 +463,7 @@ class GMB_scraper():
         
 
         driver = webdriver.Chrome(
-            ChromeDriverManager().install(), chrome_options=chrome_options
+            ChromeDriverManager().install(), chrome_options=self.chrome_options
         )
         # driver = webdriver.Chrome(chrome_options=chrome_options)
         # determine if the URL reflects the 'place' or the 'search' URL
@@ -621,7 +622,7 @@ class GMB_scraper():
                                 "% Content Reviews": None,
                                 "Intveral Content Reviews": None,
                                 "Avg Char Count": None,
-                                "Review Responses": None
+                                "Review Responses": None,
                                 "% Review Responses": None,
                                 "Invisalign Review Count": None,
                             }
@@ -734,12 +735,12 @@ def main(headless=True, GPU_blocklist=False):
     chrome_options = Options()
     # chrome_options.add_argument("--disable-extensions")
     if headless == 1:
-        chrome_options.add_argument("--ignore-gpu-blocklist")
+        chrome_options.add_argument("--headless") 
     
     if GPU_blocklist == 0:
-        chrome_options.add_argument("--headless")    
+        chrome_options.add_argument("--ignore-gpu-blocklist")
     
-    scraper = GMB_scraper()
+    scraper = GMB_scraper(chrome_options)
     client_code = scraper.client_code
     cutoff_code = scraper.cutoff_code
 
