@@ -4,14 +4,20 @@ import pandas as pd
 import os
 from pathlib import Path
 from datetime import datetime, date
+
 from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
+import chromedriver_autoinstaller
+import chromedriver_binary
+from selenium.webdriver.chrome.service import Service as ChromeService
 from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
+from webdriver_manager.core.utils import read_version_from_cmd, PATTERN
 # from selenium.webdriver.support.ui import WebDriverWait
 # from selenium.webdriver.support import expected_conditions as EC
+
 
 class GMB_scraper():
     def __init__(self, chrome_options):
@@ -19,6 +25,7 @@ class GMB_scraper():
         self.cutoff_code = input(
             """Please enter a number to specify the time intervals
             1y - ["a year"]
+            2y - ["2 years"]
             3y - ["a year", "2 years", "3 years"]
             1m - ["a month"]
             6m - ["6 months"]
@@ -44,15 +51,14 @@ class GMB_scraper():
         for p in Path("./inputs").glob("*.csv"):
             detail1 = (
                 str(p).split(".csv")[0].split("inputs\\")[1].split("__")[0]
-            )  ## for all locations
+            )  # for all locations
             print(f"~~{detail1}")
-            if client_code in detail1:  ## for all client locations
+            if client_code in detail1:  # for all client locations
                 print(str(p))
                 filename = str(p).split("inputs\\")[-1]
                 # detail = str(p).split("_competitor")[0].split("inputs\\")[1]
                 filepaths.append((client_code, filename))
                 return filepaths
-
 
     def find_target_review_tags(self, driver, pane, total_review_count, cutoff_date):
         """Scroll down on the page to add more reviews.
@@ -96,7 +102,8 @@ class GMB_scraper():
         # review_text_tags = driver.find_elements(
         #     By.CSS_SELECTOR, "div[class*='GHT2ce'] div[tabindex='-1']"
         # )
-        review_text_tags = driver.find_elements(By.CSS_SELECTOR, "div[class='GHT2ce']")
+        review_text_tags = driver.find_elements(
+            By.CSS_SELECTOR, "div[class='GHT2ce']")
         print(
             f"\nSCROLL COUNT: {scroll_count}\n NUMBER OF REVIEWS LOADED: {len(review_date_tags)}"
         )
@@ -200,7 +207,7 @@ class GMB_scraper():
                 print("SCROLL BLOCK")
                 pane.send_keys(Keys.END)
                 # driver.find_element(By.TAG_NAME, 'body').send_keys(Keys.END)
-                ## depricated
+                # depricated
                 # review_date_tags = driver.find_elements(
                 #     By.CSS_SELECTOR,
                 #     "div[class*='ODSEW'] span[aria-label*='star'] + span",
@@ -227,7 +234,8 @@ class GMB_scraper():
                         f"NUMBER OF REVIEW TAGS FOR TEXT ANALYSIS: {len(review_text_tags)}"
                     )
                     print(f"NUM REVIEW TEXT TAGS: {num_review_text_tags}")
-                    print(f"LEN REVIEW TEXT TAGS LIST: {len(review_text_tags)}")
+                    print(
+                        f"LEN REVIEW TEXT TAGS LIST: {len(review_text_tags)}")
 
                     if num_review_text_tags == len(review_text_tags):
                         print("*BUFFERING")
@@ -245,7 +253,7 @@ class GMB_scraper():
                         num_review_text_tags = len(review_text_tags)
 
         return review_date_tags, review_rating_tags, review_text_tags, review_end
-    
+
     def pull_data_from_review_tags(
         self, file_detail, cutoff_date, review_date_tags, review_rating_tags, review_text_tags
     ):
@@ -275,13 +283,13 @@ class GMB_scraper():
         target_review_char_count_avg = None
         # target_review_char_count_avg = []
 
-        ## if review_date_tags is None:
+        # if review_date_tags is None:
         #     target_review_rating_avg = None
         #     target_review_blank_pct = None
         #     target_review_char_count_avg = None
         #     return target_review_count, target_review_rating_avg, target_review_blank_pct, target_review_char_count_avg
 
-        ## else:
+        # else:
         # target_review_count
         end_index = None
         for review_index, review in enumerate(review_date_tags):
@@ -403,11 +411,14 @@ class GMB_scraper():
         # else:
         if len(target_review_text_lst) != 0:
             num_blank_reviews = len(
-                [review for review in target_review_text_lst if len(review) == 0]
+                [review for review in target_review_text_lst if len(
+                    review) == 0]
             )
-            target_review_blank_pct = num_blank_reviews / len(target_review_text_lst)
+            target_review_blank_pct = num_blank_reviews / \
+                len(target_review_text_lst)
             # target_review_content_pct = 1 - target_review_blank_pct
-            target_review_content_count = len(target_review_text_lst) - num_blank_reviews
+            target_review_content_count = len(
+                target_review_text_lst) - num_blank_reviews
         else:
             target_review_blank_pct = None
             target_review_content_count = None
@@ -422,7 +433,8 @@ class GMB_scraper():
         # else:
         if len(target_review_text_lst) != 0:
             target_review_char_count_avg = np.mean(
-                [len(review) for review in target_review_text_lst if len(review) != 0]
+                [len(review)
+                 for review in target_review_text_lst if len(review) != 0]
             )
             # response count
             target_review_response_count = len(target_response_text_lst)
@@ -460,12 +472,18 @@ class GMB_scraper():
     ):
         """Pull competitor review stats"""
 
-        
+        # driver = webdriver.Chrome(
+        #     ChromeDriverManager("114.0.5735.90").install())
 
-        driver = webdriver.Chrome(
-            ChromeDriverManager().install(), chrome_options=self.chrome_options
-        )
-        # driver = webdriver.Chrome(chrome_options=chrome_options)
+        # version = read_version_from_cmd("/usr/bin/chrome-bin --version", PATTERN["chrome"])
+        # driver = webdriver.Chrome(
+        #     ChromeDriverManager(version=version).install(), chrome_options=self.chrome_options
+        # )
+
+        chromedriver_autoinstaller.install()
+        # driver = webdriver.Chrome()
+        driver = webdriver.Chrome(self.chrome_options)
+
         # determine if the URL reflects the 'place' or the 'search' URL
         location_url_lst = []
         location_review_dict = {}
@@ -493,8 +511,8 @@ class GMB_scraper():
                 # add that URL into 'location_url_lst'
                 location_url_lst.append(current_url)
 
-        ## if the datafile is coming from the Falcon report,
-        ## then the practice URL will be included
+        # if the datafile is coming from the Falcon report,
+        # then the practice URL will be included
         else:
             print(f"\nPRACTICE URL: {practice_url}")
             location_url_lst.append(practice_url)
@@ -509,7 +527,8 @@ class GMB_scraper():
             address_element = driver.find_element(
                 By.CSS_SELECTOR, "button[aria-label*='Address']"
             )
-            address = address_element.get_attribute("aria-label").split(": ")[1]
+            address = address_element.get_attribute(
+                "aria-label").split(": ")[1]
             print(f"ADDRESS: {address}")
             address_zip = str(address.split(", ")[-1].split(" ")[1])
             location_review_dict[address_zip] = {}
@@ -521,7 +540,8 @@ class GMB_scraper():
                     By.CSS_SELECTOR, "ol[aria-label*='stars']"
                 )
                 avg_review_rating = (
-                    review_rating_element.get_attribute("aria-label").strip().split(" ")[0]
+                    review_rating_element.get_attribute(
+                        "aria-label").strip().split(" ")[0]
                 )
                 print(f"AVG REVIEW RATING: {avg_review_rating}")
             except Exception as e:
@@ -544,7 +564,8 @@ class GMB_scraper():
                 ]
                 print(f"REVIEW COUNT TEXT: '{total_review_count_raw}'")
                 if "," in total_review_count_raw:
-                    total_review_count = int("".join(total_review_count_raw.split(",")))
+                    total_review_count = int(
+                        "".join(total_review_count_raw.split(",")))
                 else:
                     total_review_count = int(total_review_count_raw)
                 print(f"CUMULATIVE REVIEW COUNT: {total_review_count}")
@@ -607,7 +628,7 @@ class GMB_scraper():
                 print('"NEWEST" BUTTON')
 
             time.sleep(1.5)
-            ## exit scope if no reviews present
+            # exit scope if no reviews present
             if total_review_count == 0:
                 for c_idx, cutoff_date in enumerate(cutoff_date_lst):
                     location_review_dict[address_zip].update(
@@ -633,11 +654,11 @@ class GMB_scraper():
                 # scroll down to load more reviews
                 # until either the end of the time period for collection is reached
                 # or until the last (oldest) review is reached
-                ## this one has been depricated
+                # this one has been depricated
                 # pane = driver.find_element(
                 #     By.CSS_SELECTOR, "div[class*='section-scrollbox']"
                 # )
-                ## i did not get this one to work
+                # i did not get this one to work
                 # pane = driver.find_elements(
                 #     By.CSS_SELECTOR, "div[data-review-id*='ChZ'] span[class*='wiI']"
                 # )[0]
@@ -686,14 +707,17 @@ class GMB_scraper():
                     print(f"REVIEW TAG DATA PULLED")
                     print(f"REVIEW COUNT: {target_review_count}")
                     if target_review_rating_avg is not None:
-                        target_review_rating_avg = round(target_review_rating_avg, 3)
+                        target_review_rating_avg = round(
+                            target_review_rating_avg, 3)
                     print(f"AVERAGE REVIEW RATING: {target_review_rating_avg}")
                     if target_review_blank_pct is not None:
-                        target_review_blank_pct = round(target_review_blank_pct * 100, 1)
+                        target_review_blank_pct = round(
+                            target_review_blank_pct * 100, 1)
                         target_review_content_pct = 100 - target_review_blank_pct
                     else:
                         target_review_content_pct = None
-                    print(f"PCT NON-BLANK REVIEWS: {target_review_content_pct}")
+                    print(
+                        f"PCT NON-BLANK REVIEWS: {target_review_content_pct}")
                     if target_review_char_count_avg is not None:
                         target_review_char_count_avg = round(
                             target_review_char_count_avg, 0
@@ -701,8 +725,10 @@ class GMB_scraper():
                     print(
                         f"AVG CHARACTER COUNT OF NON-BLANK REVIEWS: {target_review_char_count_avg}"
                     )
-                    print(f"PCT REVIEWS RESPONDED TO: {target_review_response_pct}")
-                    print(f"INVISALIGN REVIEW COUNT: {invisalign_review_count}")
+                    print(
+                        f"PCT REVIEWS RESPONDED TO: {target_review_response_pct}")
+                    print(
+                        f"INVISALIGN REVIEW COUNT: {invisalign_review_count}")
                     location_review_dict[address_zip].update(
                         {
                             cutoff_date: {
@@ -719,7 +745,7 @@ class GMB_scraper():
                                 "Invisalign Review Count": invisalign_review_count,
                             }
                         }
-                    ) 
+                    )
                     time.sleep(2)
         driver.close()
         return location_review_dict
@@ -735,18 +761,20 @@ def main(headless=True, GPU_blocklist=False):
     chrome_options = Options()
     # chrome_options.add_argument("--disable-extensions")
     if headless == 1:
-        chrome_options.add_argument("--headless") 
-    
+        chrome_options.add_argument("--headless")
+
     if GPU_blocklist == 0:
         chrome_options.add_argument("--ignore-gpu-blocklist")
-    
+
     scraper = GMB_scraper(chrome_options)
     client_code = scraper.client_code
     cutoff_code = scraper.cutoff_code
 
     yr_check = 0
     if cutoff_code == "1y":
-        cutoff_date_lst = ["a year"]
+        cutoff_date_lst = ["a year"],
+    elif cutoff_code == "2y":
+        cutoff_date_lst = ["2 years"]
     elif cutoff_code == "3y":
         cutoff_date_lst = ["a year", "2 years", "3 years"]
     elif cutoff_code == "1m":
@@ -758,7 +786,8 @@ def main(headless=True, GPU_blocklist=False):
     elif cutoff_code == "2":
         cutoff_date_lst = ["a month", "2 months", "3 months"]
     elif cutoff_code == "3":
-        cutoff_date_lst = ["a month", "2 months", "3 months", "4 months", "5 months"]
+        cutoff_date_lst = ["a month", "2 months",
+                           "3 months", "4 months", "5 months"]
     elif cutoff_code == "4":
         cutoff_date_lst = ["3 months", "6 months"]
     elif cutoff_code == "5":
@@ -781,7 +810,7 @@ def main(headless=True, GPU_blocklist=False):
         cutoff_date_lst = [f"{n} months"]
     else:
         raise Exception("pick a valid identifier as presented")
-    
+
     filepaths = scraper.load_files(client_code)
     print(f"FILEPATHS: {filepaths}")
 
@@ -806,7 +835,8 @@ def main(headless=True, GPU_blocklist=False):
         except Exception as e:
             print(f"***ERROR: {e}")
             try:
-                comp_list_df = pd.read_csv(f"./inputs/{file}", encoding="unicode_escape")
+                comp_list_df = pd.read_csv(
+                    f"./inputs/{file}", encoding="unicode_escape")
             except Exception as e:
                 print(f"***ERROR: {e}")
                 print("UNABLE TO LOAD AN INPUT FILE")
@@ -819,7 +849,8 @@ def main(headless=True, GPU_blocklist=False):
         coordinates = []
         for url in comp_url_lst:
             try:
-                coordinates.append(str(url).split("@")[1].split("//")[0].split(",")[:-1])
+                coordinates.append(str(url).split(
+                    "@")[1].split("//")[0].split(",")[:-1])
             except Exception as e:
                 coordinates.append([None, None])
 
@@ -831,7 +862,8 @@ def main(headless=True, GPU_blocklist=False):
         new_filename += "_geocoded.csv"
         print(comp_list_df)
         comp_list_df.to_csv(f"./outputs/geocoded/{new_filename}", index=False)
-        print(f"GECODED COMP LOCATION FILE SAVED: \nf'./outputs/geocoded/{new_filename}'")
+        print(
+            f"GECODED COMP LOCATION FILE SAVED: \nf'./outputs/geocoded/{new_filename}'")
 
         start = time.time()
         for index, competitor in enumerate(comp_lst):
@@ -850,7 +882,7 @@ def main(headless=True, GPU_blocklist=False):
                 )
             # try:
             competitor_url = comp_url_lst[index]
-            ## skip entries without a valid URL
+            # skip entries without a valid URL
             if str(competitor_url) == "nan":
                 continue
             location_review_dict = scraper.pull_competitor_review_stats(
@@ -880,26 +912,34 @@ def main(headless=True, GPU_blocklist=False):
                     for review_key, review_val in review_dict.items():
                         # print(f"REVIEW KEY: {review_key}")
                         if review_key == "Cumulative Reviews":
-                            entry_dict.update({"cumulative_reviews": review_val})
+                            entry_dict.update(
+                                {"cumulative_reviews": review_val})
                         elif review_key == "Avg Review Rating":
                             entry_dict.update({"total_avg_rating": review_val})
                         elif review_key == "Interval Review Count":
-                            entry_dict.update({"interval_review_count": review_val})
+                            entry_dict.update(
+                                {"interval_review_count": review_val})
                         elif review_key == "Interval Sub-5 Count":
-                            entry_dict.update({"interval_sub5star_count": review_val})
+                            entry_dict.update(
+                                {"interval_sub5star_count": review_val})
                         elif review_key == "Interval 1-Star Count":
-                            entry_dict.update({"interval_1star_count": review_val})
+                            entry_dict.update(
+                                {"interval_1star_count": review_val})
                         elif review_key == "Interval Review Rating":
-                            entry_dict.update({"interval_avg_rating": review_val})
+                            entry_dict.update(
+                                {"interval_avg_rating": review_val})
                         elif review_key == "% Content Reviews":
-                            entry_dict.update({"content_review_pct": review_val})
+                            entry_dict.update(
+                                {"content_review_pct": review_val})
                         elif review_key == "Avg Char Count":
                             entry_dict.update({"avg_char_count": review_val})
                         elif review_key == "% Review Responses":
-                            entry_dict.update({"review_response_pct": review_val})
+                            entry_dict.update(
+                                {"review_response_pct": review_val})
                         elif review_key == "Invisalign Review Count":
                             if "ortho" in file_detail:
-                                entry_dict.update({"invis_review_count": review_val})
+                                entry_dict.update(
+                                    {"invis_review_count": review_val})
                             else:
                                 pass
                     data_lst.append(entry_dict)
@@ -915,15 +955,13 @@ def main(headless=True, GPU_blocklist=False):
         # output_df.to_csv(
         #     f"./outputs/{file_detail}_competitor_review_stats.csv", index=False
         # )
-        output_df.to_csv(f"./outputs/{file_detail}_results_{report_date}.csv", index=False)
+        output_df.to_csv(
+            f"./outputs/{file_detail}_results_{report_date}.csv", index=False)
         print(f"FILE SAVED: /outputs/{file_detail}_results_{report_date}.csv")
 
     return
 
 
 if __name__ == "__main__":
-    ## run engine if file used directly from command line
-    main()
-
-
-
+    # run engine if file used directly from command line
+    main(headless=True)
